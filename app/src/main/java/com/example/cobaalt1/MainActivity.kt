@@ -48,6 +48,13 @@ class MainActivity : AppCompatActivity() {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 10
     }
 
+    private var captureCount = 0
+    private val instructions = listOf(
+        "Tolong menghadap ke tengah",
+        "Tolong wajah menghadap kanan sedikit",
+        "Tolong wajah menghadap kiri sedikit"
+    )
+
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -168,6 +175,36 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+
+    private fun startDatasetCapture() {
+        captureCount = 0
+        captureNextImage()
+    }
+
+    private fun captureNextImage() {
+        if (captureCount < 3) {
+            // Update instruksi
+            instructionText.text = instructions[captureCount]
+
+            // Mulai countdown 7 detik
+            val countdownTimer = object : CountDownTimer(7000, 1000) {
+                override fun onTick(millisUntilFinished: Long) {
+                    instructionText.text = "${instructions[captureCount]} - Countdown: ${millisUntilFinished / 1000} detik lagi"
+                }
+
+                override fun onFinish() {
+                    // Ambil gambar setelah countdown selesai
+                    instructionText.text = "Mengambil gambar..."
+                    captureImageGenerate()
+                }
+            }
+            countdownTimer.start()
+        } else {
+            instructionText.text = "Dataset telah berhasil diambil!"
+        }
+    }
+
+
     private fun captureImageGenerate() {
         val photoFile = File(externalMediaDirs.first(), "${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.jpg")
 
@@ -328,7 +365,9 @@ class MainActivity : AppCompatActivity() {
                     croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, croppedFile.outputStream())
 
                     // Kirim gambar cropped ke PreviewActivity
-                    registerFace(croppedFile,"isal")
+                    registerFace(croppedFile, "isal")
+                    captureCount++
+                    captureNextImage()
                 } else {
                     Toast.makeText(applicationContext, "Tidak ada wajah yang terdeteksi", Toast.LENGTH_SHORT).show()
                 }
@@ -362,7 +401,7 @@ class MainActivity : AppCompatActivity() {
 
             // Buat pratinjau
             preview = Preview.Builder()
-                .setTargetResolution(Size(100, 100)) // Atur resolusi pratinjau
+                .setTargetResolution(Size(500, 500)) // Atur resolusi pratinjau
                 .build()
 
             // ImageCapture untuk mengambil gambar
